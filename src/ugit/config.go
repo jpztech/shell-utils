@@ -1,7 +1,6 @@
 package ugit
 
 import (
-	"errors"
 	"fmt"
 	"os"
 
@@ -18,8 +17,10 @@ type Config struct {
 	Sites		[]Site	`yaml:"sites"`
 }
 
-func FromFile(file string) *Config {
-	c := &Config{}
+var config *Config
+
+func ReadConfigFromFile(file string) {
+	config = &Config{}
 	// if the file does not exists, return an empty map
 	if _, err := os.Stat(file); os.IsNotExist(err) {
 		fmt.Printf("File not exists")
@@ -29,23 +30,26 @@ func FromFile(file string) *Config {
 	if err != nil {
 		fmt.Printf("Error reading YAML file %s: %v\n", file, err)
 	}
-	err = yaml.Unmarshal(yamlFile, &c)
+	err = yaml.Unmarshal(yamlFile, &config)
 	if err != nil {
 		fmt.Printf("Error parsing YAML file %s: %v\n", file, err)
 	}
-	return c
 }
 
-func (c *Config) ApplySite(name string) (*Config, error) {
-	for _, site := range c.Sites {
+func ApplySite(name string) error {
+	for _, site := range config.Sites {
 		if site.Name == name {
-			c.CurrentSite = site
-			return c, nil
+			config.CurrentSite = site
+			return nil
 		}
 	}
-	return nil, errors.New("Site not found")
+	return fmt.Errorf("Site '%s' not found", name)
 }
 
-func (c *Config) GetURL(repo string) string {
-	return fmt.Sprintf("%s/%s", c.CurrentSite.BaseURL, "repo")
+func GetURL(repo string) string {
+	return fmt.Sprintf("%s/%s", config.CurrentSite.BaseURL, "repo")
+}
+
+func CurrentSite() string {
+	return config.CurrentSite.Name
 }
