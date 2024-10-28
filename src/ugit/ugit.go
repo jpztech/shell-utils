@@ -3,7 +3,6 @@ package ugit
 import (
 	"fmt"
 	"os"
-	"shell-utils/command"
 	"shell-utils/git"
 	"shell-utils/utils"
 	"strings"
@@ -11,36 +10,14 @@ import (
 	"github.com/fatih/color"
 )
 
-var config *Config
-
-func Run(_config *Config, args []string) {
-	config = _config
-	requireGitRepo := []func(args []string) bool{command.IsGitRepo}
-	noCheck := []func(args []string) bool{}
-	commands := command.Commands{
-		Commands: []command.Command{
-			{Name: "clone", ArgsLen: "1", Func: clone, Prechecks: noCheck},
-			{Name: "pull", ArgsLen: "1+", Func: pull, Prechecks: noCheck},
-			{Name: "branches", ArgsLen: "1+", Func: branches, Prechecks: noCheck},
-			{Name: "forcemain", ArgsLen: "0", Func: forcemain, Prechecks: requireGitRepo},
-			{Name: "forcemaster", ArgsLen: "0", Func: forcemaster, Prechecks: requireGitRepo},
-			{Name: "commitpush", ArgsLen: "1", Func: commitpush, Prechecks: requireGitRepo},
-		},
-	}
-	commands.Dispatch(args);
-}
-
-func forcemain(args []string) {
-	forcedefault("main")
-}
-func forcemaster(args []string) {
-	forcedefault("master")
-}
-
 // Forcing going back to default branch and pulling and delete the branch going from
-func forcedefault(bname string) {
+func Forcedefault() error {
 	repo := "."
+	if !git.IsGitRepo(repo) {
+		return fmt.Errorf("not a git repository: %s", repo)
+	}
 	
+	bname := config.CurrentSite.DefaultBranch
 	curBranch := git.CurrentBranch(repo)
 	if git.CurrentBranch(repo) == bname {
 		fmt.Printf("Already on %s branch\n", bname)
@@ -49,12 +26,17 @@ func forcedefault(bname string) {
 	utils.ExecCommand("git", "checkout", bname)
 	utils.ExecCommand("git", "pull", "origin", bname)
 	utils.ExecCommand("git", "branch", "-D", curBranch)
+	return nil
 }
 
-// Commit and push the changes to the current branch
-func commitpush(args []string) {
+const HELP_Commitpush string = `commitpush <message>: commits the changes with the specified message and pushes to the current branch`
+func Commitpush(args []string) error {
 	repo := "."
 	commitMsg := args[0]
+
+	if !git.IsGitRepo(repo) {
+		return fmt.Errorf("not a git repository: %s", repo)
+	}
 	
 	if git.CurrentBranch(repo) == config.CurrentSite.DefaultBranch {
 		color.Red("Cannot commit to default branch %s\n", config.CurrentSite.DefaultBranch)
@@ -63,16 +45,18 @@ func commitpush(args []string) {
 	utils.ExecCommand("git", "add", ".")
 	utils.ExecCommand("git", "commit", "-m", commitMsg)
 	utils.ExecCommand("git", "push", "origin", git.CurrentBranch(repo))
+	return nil
 }
 
-func clone(args []string) {
-	utils.ExecCommand("git", "clone", config.GetURL(args[0]))
+func Clone(args []string) {
+	utils.ExecCommand("git", "clone", GetURL(args[0]))
 }
 
-// pull all: pulls all repositories in the current directory
-// pull <repo>: pulls the specified repository
-// pull <pattern>: pulls all repositories matching the pattern
-func pull(args []string) {
+const HELP_Pull string = `pull all: pulls all repositories in the current directory
+pull <repo>: pulls the specified repository
+pull <pattern>: pulls all repositories matching the pattern, e.g. "pull idl" will pull all repositories with idl in the name
+`
+func Pull(args []string) {
 	repos := args
 	if len(args) == 1 {
 		if args[0] == "all" {
@@ -88,11 +72,11 @@ func pull(args []string) {
 	}
 }
 
-// branches: lists current branch for all repositories
-// branches all: lists current branch for all repositories
-// branches <repo>: lists current branch for the specified repository
-// branches <pattern>: lists current branch for all repositories matching the pattern
-func branches(args []string) {
+const HELP_Branches string = `branches: lists current branch for all repositories
+branches all: lists current branch for all repositories
+branches <repo>: lists current branch for the specified repository
+branches <pattern>: lists current branch for all repositories matching the pattern`
+func Branches(args []string) {
 	repos := args
 	if len(args) == 0 {
 		repos = getAllRepos(nil)
