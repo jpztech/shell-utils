@@ -1,12 +1,14 @@
 package ai
 
 import (
+	"fmt"
 	"log"
 	"strings"
 
 	"shell-utils/ai/gemini"
 	"shell-utils/ai/model"
 	"shell-utils/rest"
+	"shell-utils/viewer"
 )
 
 func QA(args []string) string {
@@ -15,7 +17,9 @@ func QA(args []string) string {
 	if err != nil {
 		log.Fatalf("Failed to create request: %v", err)
 	}
+	viewer.Loading("Waiting response from LLM...")
 	response, err := client.RestClient.Do(request)
+	fmt.Printf("\r\033[K")
 	if err != nil {
 		log.Fatalf("Failed to do request: %v", err)
 	}
