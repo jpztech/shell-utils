@@ -105,14 +105,23 @@ func getAllRepos(pattern *string) []string {
 		fmt.Println("Error listing repositories:", err)
 		os.Exit(1)
 	}
-	var repos []string
+	// set of repositories by their root dir
+	var repoSet = make(map[string]bool)
 	for _, repo := range entries {
 		if !strings.HasPrefix(repo.Name(), ".") && repo.IsDir() && git.IsGitRepo(repo.Name()) {
 			if pattern != nil && !strings.Contains(repo.Name(), *pattern) {
 				continue
 			}
-			repos = append(repos, repo.Name())
+			rootDir := git.RootDir(repo.Name())
+			if _, ok := repoSet[rootDir]; !ok {
+				repoSet[rootDir] = true
+			}
 		}
+	}
+	// convert the set to a list
+	var repos []string
+	for repo := range repoSet {
+		repos = append(repos, repo)
 	}
 	return repos
 }

@@ -14,6 +14,12 @@ func IsGitRepo(path string) bool {
 	return err == nil
 }
 
+// Returns the root directory for a git repository
+func RootDir(path string) string {
+	output, _ := utils.ExecCommandSilentIn(&path, "git", "rev-parse", "--show-toplevel")
+	return strings.TrimSpace(string(output))
+}
+
 // Returns the current branch for the given repository
 func CurrentBranch(repo string) string {
 	output, _ := utils.ExecCommandSilentIn(&repo, "git", "rev-parse", "--abbrev-ref", "HEAD")

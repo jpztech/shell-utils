@@ -4,5 +4,5 @@ bin:
 ugit: bin
 	go build -o ../bin/ugit ./cmd/ugit
 
-sf: bin
-	go build -o ../bin/sf ./cmd/sf
+ai: bin
+	go build -o ../bin/ai ./cmd/ai
