@@ -3,7 +3,6 @@ package ai
 import (
 	"fmt"
 	"log"
-	"strings"
 
 	"shell-utils/ai/gemini"
 	"shell-utils/ai/model"
@@ -11,8 +10,7 @@ import (
 	"shell-utils/viewer"
 )
 
-func QA(args []string) string {
-	query := strings.Join(args, " ")
+func QA(query string) string {
 	request, err := client.LLM.Request(query)
 	if err != nil {
 		log.Fatalf("Failed to create request: %v", err)

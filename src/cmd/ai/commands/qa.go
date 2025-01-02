@@ -4,6 +4,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"shell-utils/ai"
+	"shell-utils/utils"
 )
   
 func init() {
@@ -11,11 +12,12 @@ func init() {
 }
   
 var qaCmd = &cobra.Command{
-	Use:   "q [target]",
-	Short: "Quick QA",
-	Args: cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
+	Use:   "qa",
+	Short: "General QA which supports multi-line input (type EOF to finish the input)",
+	Args: cobra.MatchAll(cobra.MaximumNArgs(0), cobra.OnlyValidArgs),
 	Run: func(cmd *cobra.Command, args []string) {
-		answer := ai.QA(args)
+		query := utils.GetMultiLineInput("What's your question?")
+		answer := ai.QA(query)
 		Preview(answer)
 	},
 }
