@@ -10,18 +10,29 @@ import (
 	"shell-utils/viewer"
 )
 
-func QA(query string) string {
-	request, err := client.LLM.Request(query)
+func DoQA(query string) string {
+	return callLLM(query, model.QA).(string)
+}
+
+func DoShellAssistant(query string) model.ShellAssistantResponse {
+	return callLLM(query, model.ShellAssistant).(model.ShellAssistantResponse)
+}
+
+func callLLM(query string, scenario model.Scenario) interface{} {
+	request, err := client.LLM.Request(query, scenario)
 	if err != nil {
 		log.Fatalf("Failed to create request: %v", err)
 	}
-	viewer.Loading("Waiting response from LLM...")
+	bar := viewer.Loading("Waiting response from LLM...")
 	response, err := client.RestClient.Do(request)
-	fmt.Printf("\r\033[K")
 	if err != nil {
+		bar.Finish()
+		fmt.Printf("\r\033[K")
 		log.Fatalf("Failed to do request: %v", err)
 	}
-	result, err := client.LLM.FromResponse(response)
+	bar.Finish()
+	fmt.Printf("\r\033[K")
+	result, err := client.LLM.DecodeResponse(response, scenario)
 	if err != nil {
 		log.Fatalf("Failed to parse response: %v", err)
 	}
