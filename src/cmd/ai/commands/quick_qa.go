@@ -18,7 +18,7 @@ var quickQaCmd = &cobra.Command{
 	Args: cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
 	Run: func(cmd *cobra.Command, args []string) {
 		query := strings.Join(args, " ")
-		answer := ai.QA(query)
+		answer := ai.DoQA(query)
 		Preview(answer)
 	},
 }

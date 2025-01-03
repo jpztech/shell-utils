@@ -4,7 +4,7 @@ import (
 	"github.com/schollz/progressbar/v3"
 )
 
-func Loading(text string) {
+func Loading(text string) *progressbar.ProgressBar {
 	bar := progressbar.NewOptions(-1,
 		progressbar.OptionSetDescription(text),
 		progressbar.OptionSetWidth(20),
@@ -18,4 +18,5 @@ func Loading(text string) {
 		}),
 	)	
 	bar.Add(1)
+	return bar
 }

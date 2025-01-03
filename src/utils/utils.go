@@ -1,10 +1,12 @@
 package utils
 
 import (
+	"encoding/json"
+	"fmt"
 	"os"
 	"os/exec"
 
-	"github.com/fatih/color"	
+	"github.com/fatih/color"
 )
 
 func ExecCommand(command string, args ...string) (string, error) {
@@ -36,5 +38,15 @@ func execCommand(silent bool, path *string, command string, args ...string) (str
 		color.Red("Error executing command %s: %v\n", command, err)
 		os.Exit(1)
 	}
+	fmt.Println("output length: ", len(output))
 	return string(output), err
+}
+
+func JsonStringToMap(jsonString string) (map[string]interface{}, error) {
+	var data map[string]interface{}
+	err := json.Unmarshal([]byte(jsonString), &data)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
 }

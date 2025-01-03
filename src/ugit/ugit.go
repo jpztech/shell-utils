@@ -11,6 +11,11 @@ import (
 )
 
 // Forcing going back to default branch and pulling and delete the branch going from
+const HELP_Forcedefault string = `Force going back to the default branch (main/master) and delete the current branch. It does below
+git checkout main
+git pull origin main
+git branch -D $prevbranch
+`
 func Forcedefault() error {
 	repo := "."
 	if !git.IsGitRepo(repo) {
@@ -29,7 +34,11 @@ func Forcedefault() error {
 	return nil
 }
 
-const HELP_Commitpush string = `commitpush <message>: commits the changes with the specified message and pushes to the current branch`
+const HELP_Commitpush string = `commitpush <message>: commits the changes and pushes to the remote. It does below
+git add .
+git commit -m <message>
+git push origin <currentbranch>
+`
 func Commitpush(args []string) error {
 	repo := "."
 	commitMsg := args[0]

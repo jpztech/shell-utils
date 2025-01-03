@@ -3,6 +3,7 @@ package gemini
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"shell-utils/ai/model"
@@ -24,7 +25,8 @@ type Content struct {
 }
 
 type RequestBody struct {
-	Contents 	[]Content `json:"contents"`
+	Contents 			[]Content `json:"contents"`
+	GenerationConfig 	map[string]interface{} `json:"generationConfig,omitempty"`
 }
 
 type Candidate struct {
@@ -37,7 +39,28 @@ type ResponseBody struct {
 	ModelVersion 	string `json:"modelVersion"`
 }
 
-func (g *Gemini) Request(query string) (*http.Request, error) {
+const SHELL_ASSISTANT_GENERATION_CONFIG string = `{
+    "responseMimeType": "application/json",
+    "responseSchema": {
+        "type": "object",
+        "properties": {
+            "command": {
+                "type": "string",
+                "description": "The shell command for completing the task."
+            },
+            "explanation": {
+                "type": "string",
+                "description": "A brief explanation of what the shell command does."
+            }
+        },
+        "required": [
+            "command",
+            "explanation"
+        ]
+    }
+}`
+
+func (g *Gemini) Request(query string, scenario model.Scenario) (*http.Request, error) {
 	body := RequestBody{
 		Contents: []Content{
 			{
@@ -48,6 +71,13 @@ func (g *Gemini) Request(query string) (*http.Request, error) {
 				},
 			},
 		},
+	}
+	if scenario == model.ShellAssistant {
+		body.GenerationConfig = map[string]interface{}{}
+		err := json.Unmarshal([]byte(SHELL_ASSISTANT_GENERATION_CONFIG), &body.GenerationConfig)
+		if err != nil {
+			return nil, err
+		}
 	}
 	jsonBody, err := json.Marshal(body)
 	if err != nil {
@@ -61,14 +91,28 @@ func (g *Gemini) Request(query string) (*http.Request, error) {
 	return r, nil
 }
 
-func (g *Gemini) FromResponse(response *http.Response) (string, error) {
+func (g *Gemini) DecodeResponse(response *http.Response, scenario model.Scenario) (interface{}, error) {
 	body := ResponseBody{}
 	defer response.Body.Close()
 	err := json.NewDecoder(response.Body).Decode(&body)
 	if err != nil {
 		return "", err
 	}
-	return body.Candidates[0].Content.Parts[0].Text, nil
+	if len(body.Candidates) == 0 || len(body.Candidates[0].Content.Parts) == 0 {
+		body, _ := json.MarshalIndent(body, "", "  ")
+		return "", fmt.Errorf("invalid response: %s", string(body))
+	}
+	text := body.Candidates[0].Content.Parts[0].Text
+	if scenario == model.ShellAssistant {
+		result := model.ShellAssistantResponse{}
+		err = json.Unmarshal([]byte(text), &result)
+		if err != nil {
+			fmt.Println("Failed to unmarshal response")
+			return "", err
+		}
+		return result, nil
+	}
+	return text, nil
 }
 
 func NewLLM(url string, properties map[string]string) model.LLM {
